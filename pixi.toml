@@ -1,7 +1,7 @@
 [project]
 channels = ["conda-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64"]
-name = "benchmark-pymc"
+name = "samplerlab"
 
 [dependencies]
 python = "~=3.12"
@@ -25,16 +25,19 @@ blackjax = ">=1.2.0"
 pymc = ">=5.16.2"
 nutpie = ">=0.13.1"
 watermark = ">=2.4.3,<3"
+quarto = ">=1.4.557,<2"
+
+[pypi-dependencies]
+samplerlab = { path = ".", editable = true }
+trace-events = ">=0.1.0, <0.2"
+posteriordb = ">=0.2.0, <0.3"
 
 [target.osx.dependencies]
 libblas = { version = "*", build = "*accelerate" }
 
 [target.linux-64.dependencies]
 libblas = { version = "*", build = "*mkl" }
-
-# [pypi-dependencies]
-# Install the local directory editable
-# name-of-project = { path = ".", editable = true }
+intel-cmplr-lib-rt = ">=2024.2.0,<2025"
 
 [activation]
 # Prevent jax from preallocating most of the GPU to avoid
@@ -56,8 +59,4 @@ cuda12 = { features = ["cuda12"] }
 [tasks]
 jupyterlab = { cmd = "jupyter lab --no-browser" }
 list-jax-devices = { cmd = "python -c 'import jax; print(jax.devices())'" }
-benchmark = { cmd = "python run_benchmarks.py" }
-show-env = { cmd = "env" }
-
-[pypi-dependencies]
-trace-events = ">=0.1.0, <0.2"
+benchmark = { cmd = "python -m samplerlab" }

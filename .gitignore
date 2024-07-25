@@ -1,0 +1,6 @@
+.pixi
+traces
+__pycache__
+*.egg-info
+perf.data
+.ipynb_checkpoints

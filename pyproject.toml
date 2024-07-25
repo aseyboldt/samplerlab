@@ -1,0 +1,25 @@
+[project]
+name = "samplerlab"
+version = "0.1"
+description = "Benchmark different bayesian samplers with pymc models"
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["statistics", "bayesian", "pymc"]
+authors = [{ name = "Adrian Seyboldt", email = "adrian.seyboldt@gmail.com" }]
+maintainers = [
+  { name = "Adrian Seyboldt", email = "adrian.seyboldt@gmail.com" },
+]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+dependencies = ["numpy", "arviz", "pymc"]
+
+[project.urls]
+"Homepage" = "https://github.com/aseyboldt/samplerlab"
