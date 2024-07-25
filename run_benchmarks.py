@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import pymc as pm
 import threadpoolctl
+from scipy import special
 
 _has_cuda = False
 
@@ -31,7 +32,7 @@ def _setup_trace():
 
     trace_events.init_trace(
         trace_file_dir=f'traces/{datetime.now().isoformat(timespec="seconds")}',
-        trace_file_name="basic-example.json",
+        trace_file_name="trace.json",
         save_at_exit=True,
         overwrite_trace_files=False,
     )
@@ -146,8 +147,8 @@ _benchmarks = {}
 
 def benchmark(model_func):
     name = model_func.__name__
-
     _benchmarks[name] = model_func
+    return model_func
 
 
 def _run_benchmarks():
@@ -155,13 +156,12 @@ def _run_benchmarks():
         sample_args = {"chains": 4}
 
         with trace_events.timeit("benchmark_model", args={"model": name}):
-            with threadpoolctl.threadpool_limits(4):
-                for floatX in ["float64"]:
-                    _run_model(model_func, name, floatX, sample_args)
+            for floatX in ["float64"]:
+                _run_model(model_func, name, floatX, sample_args)
 
 
 @benchmark
-def simple_glm():
+def simple_olm():
     rng = np.random.default_rng(42)
     predictors = rng.normal(size=(10_000, 50))
     beta = rng.normal(size=50)
@@ -174,6 +174,62 @@ def simple_glm():
         mu = predictors @ beta
         sigma = pm.HalfNormal("sigma")
         pm.Normal("y", mu=mu, sigma=sigma, observed=observed)
+
+    return model
+
+
+@benchmark
+def logistic():
+    rng = np.random.default_rng(42)
+
+    n_group1 = 100
+    n_group2 = 50
+    n_obs = 50_000
+
+    intercept = rng.normal()
+    group1 = rng.integers(n_group1, size=n_obs)
+    group2 = rng.integers(n_group2, size=n_obs)
+
+    group1_effect = rng.normal(size=n_group1)
+    group2_effect = rng.normal(size=n_group2)
+    group1_group2_effect = rng.normal(size=(n_group1, n_group2))
+
+    mu = (
+        intercept
+        + group1_effect[group1]
+        + group2_effect[group2]
+        + group1_group2_effect[group1, group2]
+    )
+
+    noise = rng.normal(size=n_obs)
+
+    y = rng.random(size=n_obs) < special.expit(mu + noise)
+
+    with pm.Model() as model:
+        intercept = pm.Normal("intercept")
+
+        sd = pm.HalfNormal("group1_sigma")
+        raw = pm.ZeroSumNormal("group1_deflect_unscaled", shape=n_group1)
+        group1_deflect = pm.Deterministic("group1_deflect", sd * raw)
+
+        sd = pm.HalfNormal("group2_sigma")
+        raw = pm.ZeroSumNormal("group2_deflect_unscaled", shape=n_group2)
+        group2_deflect = pm.Deterministic("group2_deflect", sd * raw)
+
+        sd = pm.HalfNormal("group1_group2_sigma")
+        raw = pm.ZeroSumNormal(
+            "group1_group2_deflect_unscaled", shape=(n_group1, n_group2)
+        )
+        group1_group2_deflect = pm.Deterministic("group1_group2_deflect", sd * raw)
+
+        mu = (
+            intercept
+            + group1_deflect[group1]
+            + group2_deflect[group2]
+            + group1_group2_deflect.ravel()[group1 * n_group2 + group2]
+        )
+
+        pm.Bernoulli("y", p=pm.math.sigmoid(mu), observed=y)
 
     return model
 
