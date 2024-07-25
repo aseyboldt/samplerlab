@@ -209,12 +209,16 @@ def logistic():
         intercept = pm.Normal("intercept")
 
         sd = pm.HalfNormal("group1_sigma")
-        raw = pm.ZeroSumNormal("group1_deflect_unscaled", shape=n_group1)
-        group1_deflect = pm.Deterministic("group1_deflect", sd * raw)
+        group1_deflect = pm.ZeroSumNormal(
+            "group1_deflect_unscaled", sigma=sd, shape=n_group1
+        )
+        # group1_deflect = pm.Deterministic("group1_deflect", sd * raw)
 
         sd = pm.HalfNormal("group2_sigma")
-        raw = pm.ZeroSumNormal("group2_deflect_unscaled", shape=n_group2)
-        group2_deflect = pm.Deterministic("group2_deflect", sd * raw)
+        group2_deflect = pm.ZeroSumNormal(
+            "group2_deflect_unscaled", sigma=sd, shape=n_group2
+        )
+        # group2_deflect = pm.Deterministic("group2_deflect", sd * raw)
 
         sd = pm.HalfNormal("group1_group2_sigma")
         raw = pm.ZeroSumNormal(
