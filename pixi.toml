@@ -29,8 +29,6 @@ quarto = ">=1.4.557,<2"
 
 [pypi-dependencies]
 samplerlab = { path = ".", editable = true }
-trace-events = ">=0.1.0, <0.2"
-posteriordb = ">=0.2.0, <0.3"
 
 [target.osx.dependencies]
 libblas = { version = "*", build = "*accelerate" }
