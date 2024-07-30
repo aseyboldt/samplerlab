@@ -38,6 +38,11 @@ def setup_argparse():
         help="Specify the output directory where results will be stored.",
         required=True,
     )
+    parser.add_argument(
+        "--save-traces",
+        action="store_true",
+        help="Store posteriors and effective sample sizes",
+    )
 
     args = parser.parse_args()
     return args
@@ -54,7 +59,11 @@ def main():
     logger.setLevel(logging.ERROR)
 
     success, failures = samplerlab.sample_models(
-        args.seed, models, samplers, save_path=args.output
+        args.seed,
+        models,
+        samplers,
+        save_path=args.output,
+        save_traces=args.save_traces,
     )
 
     print(f"Sampled {len(success)} models successfully, and failed {len(failures)}.")

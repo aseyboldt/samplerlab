@@ -29,7 +29,8 @@ def set_jax_config(
     jax.config.update("jax_enable_x64", floatX == "float64")
     jax.config.update("jax_default_device", dev)
 
-    yield
+    with jax.default_device(dev):
+        yield
 
     jax.config.update("jax_enable_x64", old_jax_x64)
     jax.config.update("jax_default_device", old_jax_default_device)
@@ -83,15 +84,20 @@ else:
     _jax_devices: list[Literal["cpu", "cuda"]] = ["cpu"]
 
 
-def nutpie_pymc(seed, model_maker, floatX, device, backend):
+def nutpie_pymc(seed, model_maker, floatX, device, backend, lowrank):
     with pytensor.config.change_flags(floatX=floatX):
         with set_jax_config(device, floatX):
             model = model_maker.make()
             compiled = nutpie.compile_pymc_model(model, backend=backend)
 
             with measure() as result:
-                np.random.seed(42)
-                trace = nutpie.sample(compiled, progress_bar=False, chains=4)
+                trace = nutpie.sample(
+                    compiled,
+                    progress_bar=False,
+                    chains=4,
+                    low_rank_modified_mass_matrix=lowrank,
+                    seed=seed,
+                )
 
             time_info = result["times"]
 
@@ -111,12 +117,24 @@ for floatX, device, backend in product(_floatX_types, _jax_devices, _pytensor_ba
         continue
 
     pymc_sampler(
-        partial(nutpie_pymc, floatX=floatX, device=device, backend=backend),
+        partial(
+            nutpie_pymc, floatX=floatX, device=device, backend=backend, lowrank=False
+        ),
         jax=backend == "jax",
         float32=floatX == "float32",
         cuda=device == "cuda",
         numba=backend == "numba",
         name=f"nutpie-{backend}",
+    )
+    pymc_sampler(
+        partial(
+            nutpie_pymc, floatX=floatX, device=device, backend=backend, lowrank=True
+        ),
+        jax=backend == "jax",
+        float32=floatX == "float32",
+        cuda=device == "cuda",
+        numba=backend == "numba",
+        name=f"nutpie-{backend}-lowrank",
     )
 
 

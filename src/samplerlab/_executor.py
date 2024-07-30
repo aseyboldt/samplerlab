@@ -86,7 +86,7 @@ class SamplingResult:
 
 @dataclass
 class SamplingFailure:
-    error: Exception
+    error: BaseException
     model: ModelMaker
     sampler: Sampler
 
@@ -103,6 +103,7 @@ def _postprocess_sampler_result(
     sampler: Sampler,
     result: SampleResult,
     save_directory: Path | None = None,
+    save_traces: bool = False,
 ):
     trace = result.trace
     ess = arviz.ess(trace)
@@ -167,9 +168,10 @@ def _postprocess_sampler_result(
         check_name(sampler.name)
         final_dir = save_directory / model_maker.name / sampling_result.name()
         final_dir.mkdir(parents=True, exist_ok=False)
-        trace.to_netcdf(final_dir / "trace.nc")
-        ess.to_netcdf(final_dir / "ess.nc")
-        rhat.to_netcdf(final_dir / "rhat.nc")
+        if save_traces:
+            trace.to_netcdf(final_dir / "trace.nc")
+            ess.to_netcdf(final_dir / "ess.nc")
+            rhat.to_netcdf(final_dir / "rhat.nc")
 
         with open(final_dir / "stats.json", "w") as file:
             json.dump(stats, file, indent=4)
@@ -184,6 +186,7 @@ def sample_models(
     *,
     save_path: Path | str | None = None,
     progress_bar=False,
+    save_traces=False,
 ) -> tuple[list[SamplingResult], list[SamplingFailure]]:
     if save_path is not None:
         save_path = Path(save_path)
@@ -202,10 +205,21 @@ def sample_models(
             try:
                 result = sampler.sample_func(seed, model)
                 sampler_result = _postprocess_sampler_result(
-                    model, sampler, result, save_path
+                    model,
+                    sampler,
+                    result,
+                    save_path,
+                    save_traces,
                 )
             except Exception as err:
                 failed.append(SamplingFailure(error=err, model=model, sampler=sampler))
+                print(err)
+            except BaseException as err:
+                if "PanicException" not in str(type(err)):
+                    raise
+
+                failed.append(SamplingFailure(error=err, model=model, sampler=sampler))
+                print(err)
             else:
                 results.append(sampler_result)
             progress.advance(task)

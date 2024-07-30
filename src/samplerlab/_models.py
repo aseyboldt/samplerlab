@@ -17,9 +17,27 @@ def simple_olm():
     sigma = 1
     observed = mu + rng.normal(size=10_000)
 
-    with pm.Model() as model:
+    with pm.Model(check_bounds=False) as model:
         beta = pm.Normal("beta", shape=50)
         mu = predictors @ beta
+        sigma = pm.HalfNormal("sigma")
+        pm.Normal("y", mu=mu, sigma=sigma, observed=observed)
+
+    return model
+
+
+@pymc_model
+def simple_olm_noblas():
+    rng = np.random.default_rng(42)
+    predictors = rng.normal(size=(10_000, 50))
+    beta = rng.normal(size=50)
+    mu = predictors @ beta
+    sigma = 1
+    observed = mu + rng.normal(size=10_000)
+
+    with pm.Model(check_bounds=False) as model:
+        beta = pm.Normal("beta", shape=50)
+        mu = (predictors * beta[None, :]).sum(1)
         sigma = pm.HalfNormal("sigma")
         pm.Normal("y", mu=mu, sigma=sigma, observed=observed)
 
@@ -52,7 +70,7 @@ def logistic(parametrization):
 
     y = rng.random(size=n_obs) < special.expit(mu + noise)
 
-    with pm.Model() as model:
+    with pm.Model(check_bounds=False) as model:
         intercept = pm.Normal("intercept")
 
         if parametrization == "noncentered":
@@ -110,7 +128,7 @@ def radon():
     county_idx, counties = pd.factorize(data.county)
     coords = {"county": counties, "obs_id": np.arange(len(county_idx))}
 
-    with pm.Model(coords=coords, check_bounds=True) as model:
+    with pm.Model(coords=coords, check_bounds=False) as model:
         intercept = pm.Normal("intercept", sigma=10)
 
         raw = pm.Normal("county_raw", dims="county")
@@ -146,7 +164,7 @@ def radon():
 
 @pymc_model
 def plain_normal():
-    with pm.Model() as model:
+    with pm.Model(check_bounds=False) as model:
         pm.Normal("x", shape=1000)
 
     return model
