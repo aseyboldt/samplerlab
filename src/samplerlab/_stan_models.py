@@ -43,6 +43,8 @@ def register_posteriordb(path):
         "prideprejudice_paragraph-ldaK5",
     ]
 
+    names.sort()
+
     for name in names:
         posterior = db.posterior(name)
         code = posterior.model.code("stan")
