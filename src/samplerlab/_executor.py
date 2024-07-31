@@ -169,9 +169,9 @@ def _postprocess_sampler_result(
         final_dir = save_directory / model_maker.name / sampling_result.name()
         final_dir.mkdir(parents=True, exist_ok=False)
         if save_traces:
-            trace.to_netcdf(final_dir / "trace.nc")
-            ess.to_netcdf(final_dir / "ess.nc")
-            rhat.to_netcdf(final_dir / "rhat.nc")
+            trace.to_zarr(str(final_dir / "trace.zarr"))
+            ess.to_zarr(str(final_dir / "ess.zarr"))
+            rhat.to_zarr(str(final_dir / "rhat.zarr"))
 
         with open(final_dir / "stats.json", "w") as file:
             json.dump(stats, file, indent=4)

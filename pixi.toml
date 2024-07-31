@@ -27,6 +27,7 @@ nutpie = ">=0.13.1"
 watermark = ">=2.4.3,<3"
 quarto = ">=1.4.557,<2"
 ipython = ">=8.26.0,<9"
+zarr = ">=2.18.2,<3"
 
 [pypi-dependencies]
 samplerlab = { path = ".", editable = true }

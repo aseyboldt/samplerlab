@@ -263,7 +263,7 @@ def cmdstanpy(seed, model_maker):
     )
 
 
-def nutpie_stan(seed, model_maker, tune, low_rank_modified_mass_matrix):
+def nutpie_stan(seed, model_maker, tune, low_rank_modified_mass_matrix=False):
     code, data = model_maker.make()
 
     compiled = nutpie.compile_stan_model(code=code).with_data(**data)
