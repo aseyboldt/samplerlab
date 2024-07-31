@@ -8,7 +8,7 @@ python = "~=3.12"
 arviz = ">=0.18.0"
 graphviz = "*"
 jupyterlab = ">=4.2"
-jax = ">=0.4.31"
+jax = "=0.4.28"
 numba = ">=0.60"
 numpy = "<=2.0"
 pandas = ">=2.1"
@@ -26,9 +26,16 @@ pymc = ">=5.16.2"
 nutpie = ">=0.13.1"
 watermark = ">=2.4.3,<3"
 quarto = ">=1.4.557,<2"
+ipython = ">=8.26.0,<9"
 
 [pypi-dependencies]
 samplerlab = { path = ".", editable = true }
+bridgestan = ">=2.5.0, <3"
+cmdstanpy = ">=1.2.4, <2"
+posteriordb = ">=0.2.0, <0.3"
+
+[target.linux-64.pypi-dependencies]
+pystan = ">=3.10.0, <4"
 
 [target.osx.dependencies]
 libblas = { version = "*", build = "*accelerate" }
@@ -36,6 +43,12 @@ libblas = { version = "*", build = "*accelerate" }
 [target.linux-64.dependencies]
 libblas = { version = "*", build = "*mkl" }
 intel-cmplr-lib-rt = ">=2024.2.0,<2025"
+
+[target.linux-64.activation.env]
+TBB_CXX_TYPE = "gcc"
+
+[target.osx.activation.env]
+TBB_CXX_TYPE = "clang"
 
 [activation.env]
 XLA_PYTHON_CLIENT_PREALLOCATE = "false"

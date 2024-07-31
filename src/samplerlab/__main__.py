@@ -2,6 +2,7 @@ import argparse
 import logging
 
 import samplerlab
+from samplerlab._stan_models import register_posteriordb
 
 
 def setup_argparse():
@@ -43,6 +44,13 @@ def setup_argparse():
         action="store_true",
         help="Store posteriors and effective sample sizes",
     )
+    parser.add_argument(
+        "--posteriordb",
+        type=str,
+        help="Location for a posteriordb repository.",
+        required=False,
+        default=None,
+    )
 
     args = parser.parse_args()
     return args
@@ -50,6 +58,9 @@ def setup_argparse():
 
 def main():
     args = setup_argparse()
+
+    if args.posteriordb is not None:
+        register_posteriordb(args.posteriordb)
 
     models = samplerlab.select_models(args.models)
     samplers = samplerlab.select_samplers(args.samplers)

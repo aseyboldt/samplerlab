@@ -87,4 +87,4 @@ def _model(
 
 pymc_model = partial(_model, library="pymc", flags=set(["cuda", "jax", "numba"]))
 pymc_model_jax = partial(_model, library="pymc", flags=set(["cuda", "jax"]))
-stan_model = partial(_model, library="stan")
+stan_model = partial(_model, library="stan", flags=set())

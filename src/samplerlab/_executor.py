@@ -196,12 +196,19 @@ def sample_models(
     results = []
     failed = []
     items = list(product(models, samplers))
+    items = list(
+        (model, sampler)
+        for (model, sampler) in items
+        if model.model_library == sampler.model_lib
+    )
     progress = Progress(disable=not progress_bar)
 
     with progress:
         task = progress.add_task("Sampling models", total=len(items))
-        for model, sampler in items:
-            progress.print(f"Sampling {model.name} with {sampler.name}")
+        for i, (model, sampler) in enumerate(items):
+            progress.print(
+                f"{i}/{len(items)}: Sampling {model.name} with {sampler.name}"
+            )
             try:
                 result = sampler.sample_func(seed, model)
                 sampler_result = _postprocess_sampler_result(
@@ -251,7 +258,7 @@ def collect_system_data():
     )
     try:
         output_smi = subprocess.check_output(["nvidia-smi"]).decode()
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         output_smi = "<failed>"
     numpy_info = np.__config__.show(mode="dicts")
     jax_info = jax.print_environment_info(True)

@@ -11,7 +11,7 @@ from samplerlab._model_registry import pymc_model
 @pymc_model
 def simple_olm():
     rng = np.random.default_rng(42)
-    predictors = rng.normal(size=(10_000, 50))
+    predictors = np.array(rng.normal(size=(10_000, 50)), order="C")
     beta = rng.normal(size=50)
     mu = predictors @ beta
     sigma = 1

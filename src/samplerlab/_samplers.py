@@ -1,15 +1,24 @@
+import importlib.util
+import pathlib
+import tempfile
 from contextlib import contextmanager
 from functools import partial
 from itertools import product
 from typing import Literal
 
+import arviz
 import jax
 import numpy as np
 import nutpie
 import pymc as pm
 import pytensor
 
-from samplerlab._sampler_registry import SampleResult, measure, pymc_sampler
+from samplerlab._sampler_registry import (
+    SampleResult,
+    measure,
+    pymc_sampler,
+    stan_sampler,
+)
 
 
 @contextmanager
@@ -181,3 +190,107 @@ for floatX, device, backend, chain_method in product(
         cuda=device == "cuda",
         name=f"{backend}-{chain_method}",
     )
+
+
+def get_pystan():
+    if importlib.util.find_spec("stan") is None:
+        raise ValueError("pystan sampler not installed")
+
+    import stan
+
+    return stan
+
+
+@stan_sampler
+def pystan(seed, model_maker):
+    stan = get_pystan()
+
+    code, data = model_maker.make()
+    compiled = stan.build(code, data)
+
+    with measure() as result:
+        trace = compiled.sample(
+            num_chains=4,
+            save_warmup=True,
+        )
+
+    trace = arviz.from_pystan(trace, save_warmup=True)
+
+    time_info = result["times"]
+    return SampleResult(
+        meta={},
+        trace=trace,
+        time_info=time_info,
+        model_maker=model_maker,
+        float32=False,
+        device="cpu",
+    )
+
+
+@stan_sampler
+def cmdstanpy(seed, model_maker):
+    import cmdstanpy
+
+    code, data = model_maker.make()
+
+    with tempfile.TemporaryDirectory() as dir:
+        dir = pathlib.Path(dir)
+        path = dir / "model.stan"
+        with path.open("w") as file:
+            file.write(code)
+
+        compiled = cmdstanpy.CmdStanModel(stan_file=path)
+
+        with measure() as result:
+            trace = compiled.sample(
+                chains=4,
+                save_warmup=True,
+                seed=seed,
+                data=data,
+                show_progress=False,
+            )
+
+            trace = arviz.from_cmdstanpy(trace, save_warmup=True)
+
+    time_info = result["times"]
+    return SampleResult(
+        meta={},
+        trace=trace,
+        time_info=time_info,
+        model_maker=model_maker,
+        float32=False,
+        device="cpu",
+    )
+
+
+def nutpie_stan(seed, model_maker, tune, low_rank_modified_mass_matrix):
+    code, data = model_maker.make()
+
+    compiled = nutpie.compile_stan_model(code=code).with_data(**data)
+
+    with measure() as result:
+        trace = nutpie.sample(
+            compiled,
+            seed=seed,
+            chains=4,
+            tune=tune,
+            low_rank_modified_mass_matrix=low_rank_modified_mass_matrix,
+        )
+
+    time_info = result["times"]
+    return SampleResult(
+        meta={},
+        trace=trace,
+        time_info=time_info,
+        model_maker=model_maker,
+        float32=False,
+        device="cpu",
+    )
+
+
+stan_sampler(partial(nutpie_stan, tune=1000), name="nutpie-stan-1000")
+stan_sampler(partial(nutpie_stan, tune=600), name="nutpie-stan-600")
+stan_sampler(
+    partial(nutpie_stan, tune=1000, low_rank_modified_mass_matrix=True),
+    name="nutpie-stan-1000-lowrank",
+)

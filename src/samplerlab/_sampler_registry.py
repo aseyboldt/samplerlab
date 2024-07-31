@@ -84,6 +84,44 @@ def _sampler_decorator(
     return sample_func
 
 
+def stan_sampler(
+    make_sampler_func=None,
+    *,
+    cuda=False,
+    jax=False,
+    numba=False,
+    float32=False,
+    name: str | None = None,
+    keywords: list[str] | None = None,
+):
+    flags = set()
+    if cuda:
+        flags.add("cuda")
+    if jax:
+        flags.add("jax")
+    if numba:
+        flags.add("numba")
+    if float32:
+        flags.add("float32")
+
+    if make_sampler_func is None:
+        return partial(
+            _sampler_decorator,
+            model_lib="stan",
+            required_flags=flags,
+            name=name,
+            keywords=keywords,
+        )
+    else:
+        return _sampler_decorator(
+            make_sampler_func,
+            model_lib="stan",
+            required_flags=flags,
+            name=name,
+            keywords=keywords,
+        )
+
+
 def pymc_sampler(
     make_sampler_func=None,
     *,
