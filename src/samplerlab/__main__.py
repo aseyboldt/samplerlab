@@ -31,6 +31,7 @@ def setup_argparse():
         "--seed",
         default=None,
         help="The seed for the sampler runs.",
+        type=int,
     )
     parser.add_argument(
         "-o",
