@@ -263,6 +263,55 @@ def cmdstanpy(seed, model_maker):
     )
 
 
+def nutpie_stan_nf_static(seed, model_maker, tune):
+    code, data = model_maker.make()
+
+    with set_jax_config("cuda", "float32"):
+        compiled = nutpie.compile_stan_model(code=code).with_data(**data)
+
+        compiled = compiled.with_transform_adapt(
+            nn_width=[(128, 1000)],
+            nn_depth=1,
+            num_layers=9,
+            verbose=True,
+            num_diag_windows=9,
+            householder_layer=False,
+            dct_layer=False,
+            zero_init=True,
+            extension_windows=[],
+            batch_size=128,
+            max_patience=20,
+        )
+
+        with measure() as result:
+            trace = nutpie.sample(
+                compiled,
+                seed=seed,
+                chains=1,
+                tune=tune,
+                draws=5000,
+                transform_adapt=True,
+                train_on_orbit=False,
+                store_unconstrained=True,
+                store_gradient=True,
+                window_switch_freq=100,
+            )
+
+    import jax
+
+    jax.clear_caches()
+
+    time_info = result["times"]
+    return SampleResult(
+        meta={},
+        trace=trace,
+        time_info=time_info,
+        model_maker=model_maker,
+        float32=True,
+        device="cuda",
+    )
+
+
 def nutpie_stan(seed, model_maker, tune, low_rank_modified_mass_matrix=False):
     code, data = model_maker.make()
 
@@ -272,8 +321,9 @@ def nutpie_stan(seed, model_maker, tune, low_rank_modified_mass_matrix=False):
         trace = nutpie.sample(
             compiled,
             seed=seed,
-            chains=4,
+            chains=1,
             tune=tune,
+            draws=5000,
             low_rank_modified_mass_matrix=low_rank_modified_mass_matrix,
         )
 
@@ -289,8 +339,11 @@ def nutpie_stan(seed, model_maker, tune, low_rank_modified_mass_matrix=False):
 
 
 stan_sampler(partial(nutpie_stan, tune=1000), name="nutpie-stan-1000")
-stan_sampler(partial(nutpie_stan, tune=600), name="nutpie-stan-600")
 stan_sampler(
-    partial(nutpie_stan, tune=1000, low_rank_modified_mass_matrix=True),
-    name="nutpie-stan-1000-lowrank",
+    partial(nutpie_stan_nf_static, tune=1500), name="nutpie-stan-nf-static-1500"
 )
+# stan_sampler(partial(nutpie_stan, tune=600), name="nutpie-stan-600")
+# stan_sampler(
+#    partial(nutpie_stan, tune=1000, low_rank_modified_mass_matrix=True),
+#    name="nutpie-stan-1000-lowrank",
+# )
