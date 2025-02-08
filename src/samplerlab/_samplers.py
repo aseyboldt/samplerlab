@@ -281,6 +281,7 @@ def nutpie_stan_nf_static(seed, model_maker, tune):
             extension_windows=[],
             batch_size=128,
             max_patience=20,
+            untransformed_dim=None,
         )
 
         with measure() as result:
