@@ -147,6 +147,10 @@ def _postprocess_sampler_result(
             )
         if hasattr(tr_stats, "diverging"):
             stats["divergences"] = int(tr_stats.diverging.sum())
+        if hasattr(tr_stats, "unconstrained_parameter"):
+            stats["n_dim"] = len(tr_stats.unconstrained_parameter)
+        if hasattr(tr_stats, "fisher_distance"):
+            stats["fisher_distance"] = float(tr_stats.fisher_distance.mean())
 
     if hasattr(trace, "warmup_sample_stats"):
         tr_stats = trace.warmup_sample_stats
