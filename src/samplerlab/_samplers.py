@@ -266,7 +266,7 @@ def cmdstanpy(seed, model_maker):
 def nutpie_stan_nf_static(seed, model_maker, tune):
     code, data = model_maker.make()
 
-    with set_jax_config("cuda", "float32"):
+    with set_jax_config("cuda", "float64"):
         compiled = nutpie.compile_stan_model(code=code).with_data(**data)
 
         compiled = compiled.with_transform_adapt(
@@ -308,7 +308,7 @@ def nutpie_stan_nf_static(seed, model_maker, tune):
         trace=trace,
         time_info=time_info,
         model_maker=model_maker,
-        float32=True,
+        float32=False,
         device="cuda",
     )
 
