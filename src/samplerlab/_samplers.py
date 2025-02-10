@@ -263,7 +263,7 @@ def cmdstanpy(seed, model_maker):
     )
 
 
-def nutpie_stan_nf_static(seed, model_maker, tune):
+def nutpie_stan_nf_static(seed, model_maker, tune, gamma=None):
     code, data = model_maker.make()
 
     with set_jax_config("cuda", "float64"):
@@ -282,6 +282,7 @@ def nutpie_stan_nf_static(seed, model_maker, tune):
             batch_size=128,
             max_patience=20,
             untransformed_dim=None,
+            gamma=gamma,
         )
 
         with measure() as result:
@@ -338,6 +339,12 @@ def nutpie_stan(seed, model_maker, tune, low_rank_modified_mass_matrix=False):
         device="cpu",
     )
 
+
+# stan_sampler(partial(nutpie_stan, tune=1000), name="nutpie-stan-1000")
+stan_sampler(
+    partial(nutpie_stan_nf_static, tune=1500, gamma=0.5),
+    name="nutpie-stan-nf-static-gamma05-1500",
+)
 
 stan_sampler(partial(nutpie_stan, tune=1000), name="nutpie-stan-1000")
 stan_sampler(
