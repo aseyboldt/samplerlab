@@ -269,21 +269,7 @@ def nutpie_stan_nf_static(seed, model_maker, tune, gamma=None):
     with set_jax_config("cuda", "float64"):
         compiled = nutpie.compile_stan_model(code=code).with_data(**data)
 
-        compiled = compiled.with_transform_adapt(
-            nn_width=[(128, 1000)],
-            nn_depth=1,
-            num_layers=9,
-            verbose=True,
-            num_diag_windows=9,
-            householder_layer=False,
-            dct_layer=False,
-            zero_init=True,
-            extension_windows=[],
-            batch_size=128,
-            max_patience=20,
-            untransformed_dim=None,
-            gamma=gamma,
-        )
+        compiled = compiled.with_transform_adapt(gamma=gamma)
 
         with measure() as result:
             trace = nutpie.sample(
@@ -293,10 +279,8 @@ def nutpie_stan_nf_static(seed, model_maker, tune, gamma=None):
                 tune=tune,
                 draws=5000,
                 transform_adapt=True,
-                train_on_orbit=False,
                 store_unconstrained=True,
                 store_gradient=True,
-                window_switch_freq=100,
             )
 
     import jax
@@ -341,12 +325,8 @@ def nutpie_stan(seed, model_maker, tune, low_rank_modified_mass_matrix=False):
 
 
 # stan_sampler(partial(nutpie_stan, tune=1000), name="nutpie-stan-1000")
-stan_sampler(
-    partial(nutpie_stan_nf_static, tune=1500, gamma=0.5),
-    name="nutpie-stan-nf-static-gamma05-1500",
-)
 
-stan_sampler(partial(nutpie_stan, tune=1000), name="nutpie-stan-1000")
+stan_sampler(partial(nutpie_stan, tune=1500), name="nutpie-stan-1500")
 stan_sampler(
     partial(nutpie_stan_nf_static, tune=1500), name="nutpie-stan-nf-static-1500"
 )
